@@ -2,8 +2,7 @@ import sys
 import pygame
 
 from Vaisseau import Vaisseau
-
-from State import GameState
+from State import InGameMainState, MainMenuState
 
 class Game:
 
@@ -30,10 +29,12 @@ class Game:
         # et pour revenir au state précédent,
         # on dépile.
         self.main_state = list()
+        self.add_main_state(MainMenuState())
 
-    def add_main_state(self, state: GameState):
+    def add_main_state(self, state):
         """ ajoute un state à la pile """
         self.main_state.append(state)
+        state.init(self)
 
     def pop_main_state(self):
         """ retourne au state précédent """
@@ -45,21 +46,7 @@ class Game:
 
     def get_screen_dimensions(self) -> tuple:
         """ retourne les dimensions de l'écran """
-        return (self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
-    
-    def _handle_events(self):
-        """ gestion des événements """
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-            if event.type == pygame.KEYUP and event.key in [self.actions['left'], self.actions['right']]:
-                self.main_player.dx = 0.0
-
-            if event.type == pygame.KEYDOWN and event.key == self.actions['shoot']:
-                self.main_player.shoot()
-                
+        return (self.SCREEN_WIDTH, self.SCREEN_HEIGHT)            
 
     def init(self):
         """ création des groupes et des sprites """
@@ -74,10 +61,5 @@ class Game:
 
         self.screen.fill((0, 0, 0))
 
-        self.main_player.speed = 0.1 * self.SCREEN_WIDTH
-
-        self._handle_events()
-
-        self.main_player.update(dt)
-        
-        self.vaisseaux_group.draw(self.screen)
+        # on met à jour le state actuel
+        self.get_current_main_state().step(self, dt)
