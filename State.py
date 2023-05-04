@@ -5,6 +5,7 @@ from Button import Button
 from utils.Font import get_font
 
 import pygame
+import cv2
 
 class State(ABC):
     @abstractmethod
@@ -57,29 +58,31 @@ class MainMenuState(GameState):
 class InGameMainState(GameState):
     def init(self, game):
         self.in_game_state = list() # pareil que pour le main_state, cependant celui-ci est utilisé pour les états lors du InGameState.
-        self.add_ingame_state(IntroState())
+        self.add_ingame_state(IntroState(), game)
 
     def step(self, game, dt):
-        game.main_player.speed = 0.1 * game.SCREEN_WIDTH
+        # game.main_player.speed = 0.1 * game.SCREEN_WIDTH
+
+        self.get_current_ingame_state().step(game, dt)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game.running = False
 
-            if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
-                game.main_player.dx = 0.0
+        #     if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
+        #         game.main_player.dx = 0.0
 
-            if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
-                game.main_player.shoot()
+        #     if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
+        #         game.main_player.shoot()
 
-        game.main_player.update(dt)
+        # game.main_player.update(dt)
             
-        game.vaisseaux_group.draw(game.screen)
+        # game.vaisseaux_group.draw(game.screen)
 
-    def add_ingame_state(self, state: InGameState):
+    def add_ingame_state(self, state: InGameState, game):
         """ ajoute un state à la pile """
         self.in_game_state.append(state)
-        state.init(self)
+        state.init(game)
 
     def pop_ingame_state(self):
         """ retourne au state précédent """
@@ -100,10 +103,14 @@ class GameOverState(InGameState):
 
 class IntroState(InGameState):
     def init(self, game):
-        pass
+        self.video = cv2.VideoCapture("assets/intro.mp4")
 
     def step(self, game, dt):
-        pass
+        success, video_image = self.video.read()
+        if success:
+            video_image_resize = cv2.resize(video_image, (game.SCREEN_WIDTH, game.SCREEN_HEIGHT))
+            video_surf = pygame.image.frombuffer(video_image_resize.tobytes(), video_image_resize.shape[1::-1], "RGB")
+            game.screen.blit(video_surf, (0, 0))
 
 class PlayingState(InGameState):
     def init(self, game):

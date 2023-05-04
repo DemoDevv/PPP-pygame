@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     game.running = True
     while game.running:
-        dt = game.clock.tick(60)
+        dt = game.clock.tick(game.fps)
         game.step(dt)
         pygame.display.update()
 

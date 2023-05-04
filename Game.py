@@ -24,6 +24,9 @@ class Game:
         self.SCREEN_HEIGHT = 720
         self.SCREEN_WIDTH = 1280
 
+        self.fps_base = 60
+        self.fps = self.fps_base
+
         # on utilise le state comme une pile,
         # cela signifie que le state le plus récent est le dernier élément de la liste 
         # et pour revenir au state précédent,
