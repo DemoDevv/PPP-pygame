@@ -14,7 +14,8 @@ class Game:
             'left': pygame.K_LEFT,
             'right': pygame.K_RIGHT,
             'shoot': pygame.K_SPACE,
-            'skip': pygame.K_RETURN
+            'skip': pygame.K_RETURN,
+            'pause': pygame.K_ESCAPE
         }
 
         self.running = False
@@ -43,6 +44,7 @@ class Game:
     def pop_main_state(self):
         """ retourne au state précédent """
         self.main_state.pop()
+        self.reset()
 
     def get_current_main_state(self):
         """ retourne le state actuel """
@@ -58,6 +60,10 @@ class Game:
 
         self.main_player = Vaisseau(self, "assets/vaisseau_test.png", 0.4 * self.SCREEN_WIDTH, (self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 100))
         self.vaisseaux_group.add(self.main_player)
+
+    def reset(self):
+        """ remise à zéro des sprites et des groupes """
+        self.init()
 
     def step(self, dt: float):
         """ mise à jour des sprites """

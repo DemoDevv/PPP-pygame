@@ -64,9 +64,6 @@ class Vaisseau(pygame.sprite.Sprite):
 
         self.pos.x += self.velocity.x
 
-        self.rect_life.center = (self.pos.x, self.pos.y + 55)
-        self.surface_life.fill((0, 255, 0), (0, 0, self.life, self.life_bar_height))
-
         if self.pos.x - self.rect_width / 2 <= 0:
             self.pos.x = self.rect_width / 2
             self.velocity.x = 0.0
@@ -74,6 +71,9 @@ class Vaisseau(pygame.sprite.Sprite):
         if self.pos.x + self.rect_width / 2 >= self.game.SCREEN_WIDTH:
             self.pos.x = self.game.SCREEN_WIDTH - self.rect_width / 2
             self.velocity.y = 0.0
+
+        self.rect_life.center = (self.pos.x, self.pos.y + 55)
+        self.surface_life.fill((0, 255, 0), (0, 0, self.life, self.life_bar_height))
 
         self.rect.center = (self.pos.x, self.pos.y)
         self.game.screen.blit(self.surface_life, self.rect_life)

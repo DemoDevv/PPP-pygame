@@ -4,3 +4,4 @@ je vais ajouter le mouvement de haut en bas n'y toucher pas pls sinon vous pouve
 
 TODO:
 - ajouter un system de commande a écrire pour skip des levels ou autres
+- faire des transitions entre certain states
