@@ -25,7 +25,9 @@ class GameState(State, ABC):
 
 class InGameState(State, ABC):
     """ classe abstraite pour les états in-game """
-    pass
+    def __init__(self, parent_state) -> None:
+        super().__init__()
+        self.parent_state = parent_state
 
 
 class MainMenuState(GameState):
@@ -58,26 +60,11 @@ class MainMenuState(GameState):
 class InGameMainState(GameState):
     def init(self, game):
         self.in_game_state = list() # pareil que pour le main_state, cependant celui-ci est utilisé pour les états lors du InGameState.
-        self.add_ingame_state(IntroState(), game)
+        self.add_ingame_state(IntroState(self), game)
 
     def step(self, game, dt):
-        # game.main_player.speed = 0.1 * game.SCREEN_WIDTH
-
+        """ mise à jour du state in-game actuel """
         self.get_current_ingame_state().step(game, dt)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                game.running = False
-
-        #     if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
-        #         game.main_player.dx = 0.0
-
-        #     if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
-        #         game.main_player.shoot()
-
-        # game.main_player.update(dt)
-            
-        # game.vaisseaux_group.draw(game.screen)
 
     def add_ingame_state(self, state: InGameState, game):
         """ ajoute un state à la pile """
@@ -104,10 +91,23 @@ class GameOverState(InGameState):
 class IntroState(InGameState):
     def init(self, game):
         self.video = cv2.VideoCapture("assets/intro.mp4")
+        self.compteur_frame = 0
 
     def step(self, game, dt):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game.running = False
+
+            if event.type == pygame.KEYDOWN and event.key == game.actions['skip']:
+                self.video.release()
+                self.parent_state.add_ingame_state(PlayingState(self.parent_state), game)
+
         success, video_image = self.video.read()
+        if self.compteur_frame == self.video.get(cv2.CAP_PROP_FRAME_COUNT):
+            self.video.release()
+            self.parent_state.add_ingame_state(PlayingState(self.parent_state), game)
         if success:
+            self.compteur_frame += 1
             video_image_resize = cv2.resize(video_image, (game.SCREEN_WIDTH, game.SCREEN_HEIGHT))
             video_surf = pygame.image.frombuffer(video_image_resize.tobytes(), video_image_resize.shape[1::-1], "RGB")
             game.screen.blit(video_surf, (0, 0))
@@ -117,7 +117,21 @@ class PlayingState(InGameState):
         pass
 
     def step(self, game, dt):
-        pass
+        game.main_player.speed = 0.1 * game.SCREEN_WIDTH
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game.running = False
+
+            if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
+                game.main_player.dx = 0.0
+
+            if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
+                game.main_player.shoot()
+        
+        game.main_player.update(dt)
+            
+        game.vaisseaux_group.draw(game.screen)
 
 class BossState(InGameState):
     def init(self, game):

@@ -13,7 +13,8 @@ class Game:
             'down': pygame.K_DOWN,
             'left': pygame.K_LEFT,
             'right': pygame.K_RIGHT,
-            'shoot': pygame.K_SPACE
+            'shoot': pygame.K_SPACE,
+            'skip': pygame.K_RETURN
         }
 
         self.running = False
