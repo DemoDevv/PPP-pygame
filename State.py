@@ -113,8 +113,16 @@ class IntroState(InGameState):
             game.screen.blit(video_surf, (0, 0))
 
 class PlayingState(InGameState):
+
+    class AnimationState(Enum):
+        FromBack = 0
+        ToBack = 1
+        Idle = 2
+
     def init(self, game):
-        pass
+        self.animation_state = self.AnimationState.FromBack
+        self.animation_time = 0.0 # ne pas oublier de le reset
+        self.animation_duration = 1000.0
 
     def step(self, game, dt):
         game.main_player.speed = 0.1 * game.SCREEN_WIDTH
@@ -123,13 +131,18 @@ class PlayingState(InGameState):
             if event.type == pygame.QUIT:
                 game.running = False
 
-            if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
-                game.main_player.dx = 0.0
+            if self.animation_state == self.AnimationState.Idle: # si le joueur est en idle, on peut le déplacer
 
-            if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
-                game.main_player.shoot()
-        
-        game.main_player.update(dt)
+                if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
+                    game.main_player.dx = 0.0
+
+                if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
+                    game.main_player.shoot()
+
+        if self.animation_state == self.AnimationState.Idle: # si le joueur est en idle, on peut l'update normalement
+            game.main_player.update(dt)
+        else:
+            game.main_player.perform_animation(dt, self.animation_state) # sinon on update l'animation
             
         game.vaisseaux_group.draw(game.screen)
 
