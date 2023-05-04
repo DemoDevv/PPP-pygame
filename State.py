@@ -4,8 +4,12 @@ from Button import Button
 
 from utils.Font import get_font
 
+from Command import commands
+
 import pygame
 import cv2
+
+import pygame_textinput
 
 class State(ABC):
     @abstractmethod
@@ -154,6 +158,9 @@ class PlayingState(InGameState):
 
             if event.type == pygame.KEYDOWN and event.key == game.actions['pause']: # si on appuie sur la touche pause, on met le jeu en pause
                 self.add_superposed_state(PauseState(self), game) # on ajoute un état superposé au jeu et on met le jeu en pause via la fonction init
+            
+            if event.type == pygame.KEYDOWN and event.key == game.actions['chat']: # si on appuie sur la touche chat, on met le jeu en pause
+                self.add_superposed_state(ChatState(self), game)
 
             if self.animation_state == self.AnimationState.Idle: # si le joueur est en idle, on peut le déplacer
 
@@ -239,10 +246,46 @@ class PauseState(SuperPosedState):
 class ChatState(SuperPosedState):
 
     def init(self, game):
-        pass
+        self.parent_ingame_state.paused = True
+
+        self.text_input_visualizer = pygame_textinput.TextInputVisualizer(pygame_textinput.TextInputManager(validator=lambda input: len(input) <= 16), get_font(12), font_color=(255, 255, 255), cursor_color=(255, 255, 255), cursor_blink_interval=500)
 
     def step(self, game, dt):
-        pass
+        events = pygame.event.get()
+
+        self.text_input_visualizer.update(events)
+
+        game.screen.blit(self.text_input_visualizer.surface, (10, game.SCREEN_HEIGHT - 20))
+
+        for event in events:
+            if event.type == pygame.QUIT:
+                game.running = False
+
+            if event.type == pygame.KEYDOWN and event.key == game.actions['pause']: # si on appuie sur la touche pause, on met le jeu en play
+                self.parent_ingame_state.paused = False
+                self.parent_ingame_state.superposed_state = None
+                game.main_player.dx = 0.0
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                text_input_value = self.text_input_visualizer.value
+                if text_input_value[0] != "/":
+                    print("ce n'est pas une commande")
+                    break # TODO: afficher un message d'erreur
+                
+                command_name = text_input_value[1:]
+                command_objs = list(filter(lambda command: command.name == command_name, commands))
+
+                if len(command_objs) == 0:
+                    print("commande inconnue")
+                    break # TODO: gerer les commandes inconnues
+
+                command_obj = command_objs[0]
+
+                command_obj.execute() # on execute la commande
+
+                self.parent_ingame_state.paused = False
+                self.parent_ingame_state.superposed_state = None
+                game.main_player.dx = 0.0
 
 
 class GameLevel(Enum):

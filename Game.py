@@ -15,7 +15,8 @@ class Game:
             'right': pygame.K_RIGHT,
             'shoot': pygame.K_SPACE,
             'skip': pygame.K_RETURN,
-            'pause': pygame.K_ESCAPE
+            'pause': pygame.K_ESCAPE,
+            'chat': pygame.K_t
         }
 
         self.running = False

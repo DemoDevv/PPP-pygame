@@ -9,6 +9,9 @@ class Command:
         self.description = description
         self.function = function
 
+    def execute(self, *args, **kwargs):
+        self.function(*args, **kwargs)
+
 
 commands = [
     Command("help", "Affiche la liste des commandes", lambda: print("\n".join([f"{command.name} : {command.description}" for command in commands]))),
