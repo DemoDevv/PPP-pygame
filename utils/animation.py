@@ -19,6 +19,17 @@ def ease_out_back(t):
     return 1 + c3 * math.pow(t - 1, 3) + c1 * math.pow(t - 1, 2)
 
 
+def easeInOutExpo(t):
+    if t == 0:
+        return 0
+    elif t == 1:
+        return 1
+    elif t < 0.5:
+        return pow(2, 20 * t - 10) / 2
+    else:
+        return (2 - pow(2, -20 * t + 10)) / 2
+
+
 def animate(animate_func, depart, arrive, t):
     return lerp(depart, arrive, animate_func(t))
 

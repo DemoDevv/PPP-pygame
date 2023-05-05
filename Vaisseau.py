@@ -1,7 +1,7 @@
 import pygame
 
 from utils.Vec2d import Vec2d
-from utils.animation import lerp_position_2d, animate_position_2d, ease_out_back
+from utils.animation import animate_position_2d, ease_out_back, easeInOutExpo
 
 
 class Vaisseau(pygame.sprite.Sprite):
@@ -46,12 +46,24 @@ class Vaisseau(pygame.sprite.Sprite):
             self.pos_during_animation = Vec2d(animate_position_2d(ease_out_back, self.pos_start_animation.to_tuple(), self.pos.to_tuple(), current_ingame_state.animation_time))
             self.rect.center = self.pos_during_animation.to_tuple()
 
-            if self.pos_during_animation.y <= self.pos.y:
+            if current_ingame_state.animation_time >= 1.:
                 current_ingame_state.animation_state = current_ingame_state.AnimationState.Idle
+                self.dx = 0.0
                 current_ingame_state.animation_time = 0.0
 
         elif animation_type == current_ingame_state.AnimationState.ToBack:
             pass # utiliser cette animation lors du changement de joueur
+
+        elif animation_type == current_ingame_state.AnimationState.ToTop:
+            current_ingame_state.animation_time += dt
+
+            self.pos_during_animation = Vec2d(animate_position_2d(easeInOutExpo, self.pos.to_tuple(), (self.pos.x, -150), current_ingame_state.animation_time))
+            self.rect.center = self.pos_during_animation.to_tuple()
+
+            if current_ingame_state.animation_time >= 1.:
+                current_ingame_state.animation_state = current_ingame_state.AnimationState.Idle
+                self.dx = 0.0
+                current_ingame_state.animation_time = 0.0
 
     def update(self, dt):
         if pygame.key.get_pressed()[self.game.actions['left']]:
@@ -81,3 +93,5 @@ class Vaisseau(pygame.sprite.Sprite):
     def shoot(self):
         """ tire un projectile """
         print("piouuu")
+        current_ingame_state = self.game.get_current_main_state().get_current_ingame_state()
+        current_ingame_state.animation_state = self.game.get_current_main_state().get_current_ingame_state().AnimationState.ToTop

@@ -139,6 +139,7 @@ class PlayingState(InGameState):
         FromBack = 0
         ToBack = 1
         Idle = 2
+        ToTop = 3
 
     def init(self, game):
         self.animation_state = self.AnimationState.FromBack
@@ -162,7 +163,7 @@ class PlayingState(InGameState):
             if event.type == pygame.KEYDOWN and event.key == game.actions['chat']: # si on appuie sur la touche chat, on met le jeu en pause
                 self.add_superposed_state(ChatState(self), game)
 
-            if self.animation_state == self.AnimationState.Idle: # si le joueur est en idle, on peut le déplacer
+            if self.animation_state == self.AnimationState.Idle: # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
 
                 if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
                     game.main_player.dx = 0.0
