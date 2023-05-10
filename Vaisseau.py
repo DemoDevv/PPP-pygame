@@ -3,6 +3,15 @@ import pygame
 from utils.Vec2d import Vec2d
 from utils.animation import animate_position_2d, ease_out_back, easeInOutExpo
 
+from enum import Enum
+
+
+class AnimationState(Enum):
+    Idle = 0
+    FromBack = 1
+    ToBack = 2
+    ToTop = 3
+
 
 class Vaisseau(pygame.sprite.Sprite):
 
@@ -37,38 +46,56 @@ class Vaisseau(pygame.sprite.Sprite):
 
         self.dx = 0.0
 
-    def perform_animation(self, dt, animation_type):
-        current_ingame_state = self.game.get_current_main_state().get_current_ingame_state()
+        self.current_animation_state = AnimationState.FromBack
+        self.animation_time = 0.0
+        self.animation = {
+            AnimationState.Idle: self.idle_movement,
+            AnimationState.FromBack: self.from_back_movement, 
+            AnimationState.ToBack: self.to_back_movement, 
+            AnimationState.ToTop: self.to_top_movement
+        }
 
-        if animation_type == current_ingame_state.AnimationState.FromBack:
-            current_ingame_state.animation_time += dt
+    def _finish_animation(self):
+        if self.animation_time >= 1.:
+            self.current_animation_state = AnimationState.Idle
+            self.dx = 0.0
+            self.animation_time = 0.0
 
-            self.pos_during_animation = Vec2d(animate_position_2d(ease_out_back, self.pos_start_animation.to_tuple(), self.pos.to_tuple(), current_ingame_state.animation_time))
+    def _perform_animation(self, dt, animation_type):
+
+        if animation_type == AnimationState.FromBack:
+            self.animation_time += dt
+
+            self.pos_during_animation = Vec2d(animate_position_2d(ease_out_back, self.pos_start_animation.to_tuple(), self.pos.to_tuple(), self.animation_time))
             self.rect.center = self.pos_during_animation.to_tuple()
 
-            if current_ingame_state.animation_time >= 1.:
-                current_ingame_state.animation_state = current_ingame_state.AnimationState.Idle
-                self.dx = 0.0
-                current_ingame_state.animation_time = 0.0
+            print(self.animation_time)
+            self._finish_animation()
 
-        elif animation_type == current_ingame_state.AnimationState.ToBack:
+        elif animation_type == AnimationState.ToBack:
             pass # utiliser cette animation lors du changement de joueur
 
-        elif animation_type == current_ingame_state.AnimationState.ToTop:
-            current_ingame_state.animation_time += dt
+        elif animation_type == AnimationState.ToTop:
+            self.animation_time += dt
 
-            self.pos_during_animation = Vec2d(animate_position_2d(easeInOutExpo, self.pos.to_tuple(), (self.pos.x, -150), current_ingame_state.animation_time))
+            self.pos_during_animation = Vec2d(animate_position_2d(easeInOutExpo, self.pos.to_tuple(), (self.pos.x, -150), self.animation_time))
             self.rect.center = self.pos_during_animation.to_tuple()
 
-            if current_ingame_state.animation_time >= 1.:
-                current_ingame_state.animation_state = current_ingame_state.AnimationState.Idle
-                self.dx = 0.0
-                current_ingame_state.animation_time = 0.0
+            self._finish_animation()
+
 
     def update(self, dt):
+        self.animation[self.current_animation_state](dt)
+
+    def draw_health_bar(self):
+        self.rect_life.center = (self.pos.x, self.pos.y + 55)
+        self.surface_life.fill((0, 255, 0), (0, 0, self.life, self.life_bar_height))
+        self.game.screen.blit(self.surface_life, self.rect_life)
+
+    def idle_movement(self, dt):
         if pygame.key.get_pressed()[self.game.actions['left']]:
             self.dx = -self.speed
-        elif pygame.key.get_pressed()[self.game.actions['right']]:
+        if pygame.key.get_pressed()[self.game.actions['right']]:
             self.dx = self.speed
 
         self.velocity.x += self.dx * dt
@@ -84,14 +111,20 @@ class Vaisseau(pygame.sprite.Sprite):
             self.pos.x = self.game.SCREEN_WIDTH - self.rect_width / 2
             self.velocity.y = 0.0
 
-        self.rect_life.center = (self.pos.x, self.pos.y + 55)
-        self.surface_life.fill((0, 255, 0), (0, 0, self.life, self.life_bar_height))
-
         self.rect.center = (self.pos.x, self.pos.y)
-        self.game.screen.blit(self.surface_life, self.rect_life)
+        self.draw_health_bar()
+
+    def from_back_movement(self, dt):
+        self._perform_animation(dt, AnimationState.FromBack)
+
+    def to_back_movement(self, dt):
+        self._perform_animation(dt, AnimationState.ToBack)
+
+    def to_top_movement(self, dt):
+        self._perform_animation(dt, AnimationState.ToTop)
 
     def shoot(self):
         """ tire un projectile """
         print("piouuu")
-        current_ingame_state = self.game.get_current_main_state().get_current_ingame_state()
-        current_ingame_state.animation_state = self.game.get_current_main_state().get_current_ingame_state().AnimationState.ToTop
+        self.current_animation_state = AnimationState.ToTop
+
