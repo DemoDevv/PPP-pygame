@@ -144,7 +144,7 @@ class PlayingState(InGameState):
         game.main_player.speed = 0.1 * game.SCREEN_WIDTH
 
         if self.paused:
-            game.vaisseaux_group.draw(game.screen) # TODO: ajouter une fonction draw au ingamestate super classe
+            game.draw_groups()
             self.superposed_state.step(game, dt)
             return
 
@@ -166,9 +166,9 @@ class PlayingState(InGameState):
                 if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
                     game.main_player.shoot()
 
-        game.main_player.update(dt)
+        game.update_groups(dt)
             
-        game.vaisseaux_group.draw(game.screen)
+        game.draw_groups()
 
 class BossState(InGameState):
     def init(self, game):
