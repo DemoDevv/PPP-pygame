@@ -8,3 +8,10 @@ TODO:
 - ajouter historique des commandes
 - faire des transitions entre certain states
 - passer tout les events d'un coup au lieu de boucler a chaque fois mais a faire en dernier
+
+A faire en priorité:
+
+- ajouter les combats de boss avec nos tetes
+- ajouter les competences
+- faire le texte du debut de la cinematique
+- les bruitages si j'ai le temps
