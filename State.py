@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+
 from Button import Button
+from Vaisseau import AnimationState
 
 from utils.Font import get_font
 
@@ -135,20 +137,14 @@ class IntroState(InGameState):
 
 class PlayingState(InGameState):
 
-    class AnimationState(Enum):
-        FromBack = 0
-        ToBack = 1
-        Idle = 2
-
     def init(self, game):
-        self.animation_state = self.AnimationState.FromBack
-        self.animation_time = 0.0 # ne pas oublier de le reset lors du passage au state Idle
+        pass
 
     def step(self, game, dt):
         game.main_player.speed = 0.1 * game.SCREEN_WIDTH
 
         if self.paused:
-            game.vaisseaux_group.draw(game.screen) # TODO: ajouter une fonction draw au ingamestate super classe
+            game.draw_groups()
             self.superposed_state.step(game, dt)
             return
 
@@ -162,7 +158,7 @@ class PlayingState(InGameState):
             if event.type == pygame.KEYDOWN and event.key == game.actions['chat']: # si on appuie sur la touche chat, on met le jeu en pause
                 self.add_superposed_state(ChatState(self), game)
 
-            if self.animation_state == self.AnimationState.Idle: # si le joueur est en idle, on peut le déplacer
+            if game.main_player.current_animation_state == AnimationState.Idle: # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
 
                 if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
                     game.main_player.dx = 0.0
@@ -170,12 +166,9 @@ class PlayingState(InGameState):
                 if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
                     game.main_player.shoot()
 
-        if self.animation_state == self.AnimationState.Idle: # si le joueur est en idle, on peut l'update normalement
-            game.main_player.update(dt)
-        else:
-            game.main_player.perform_animation(dt, self.animation_state) # sinon on update l'animation
+        game.update_groups(dt)
             
-        game.vaisseaux_group.draw(game.screen)
+        game.draw_groups()
 
 class BossState(InGameState):
     def init(self, game):
@@ -268,6 +261,7 @@ class ChatState(SuperPosedState):
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 text_input_value = self.text_input_visualizer.value
+
                 if text_input_value[0] != "/":
                     print("ce n'est pas une commande")
                     break # TODO: afficher un message d'erreur

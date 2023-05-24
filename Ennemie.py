@@ -9,12 +9,10 @@ from enum import Enum
 
 class AnimationState(Enum):
     Idle = 0
-    FromBack = 1
-    ToBack = 2
-    ToTop = 3
+    FromTop = 1
 
 
-class Vaisseau(pygame.sprite.Sprite):
+class Ennemie(pygame.sprite.Sprite):
 
     def __init__(self, game, path_image: str, speed: int, init_pos: tuple, init_life: int = 100):
         pygame.sprite.Sprite.__init__(self)
@@ -114,20 +112,9 @@ class Vaisseau(pygame.sprite.Sprite):
         self.rect.center = (self.pos.x, self.pos.y)
         self.draw_health_bar()
 
-    def from_back_movement(self, dt):
-        self._perform_animation(dt, AnimationState.FromBack)
-
-    def to_back_movement(self, dt):
-        self._perform_animation(dt, AnimationState.ToBack)
-
-    def to_top_movement(self, dt):
-        self._perform_animation(dt, AnimationState.ToTop)
-
     def shoot(self):
         """ tire un projectile """
         print("piouuu")
         #self.current_animation_state = AnimationState.ToTop
-        self.game.bullet_group.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180))
-        self.game.bullet_group.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 90 + 45))
-        self.game.bullet_group.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180 + 45))
+        self.game.bullet_group.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y)))
 

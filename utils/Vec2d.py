@@ -20,9 +20,12 @@ class Vec2d():
         return f"({self.x}, {self.y})"
 
     def normalize(self):
-        norm = math.sqrt(self.x * self.x + self.y * self.y)
+        norm = self.magnitude()
         self.x /= norm
         self.y /= norm
+
+    def magnitude(self):
+        return math.sqrt(self.x * self.x + self.y * self.y)
 
     def to_tuple(self):
         return (self.x, self.y)
