@@ -3,6 +3,7 @@ from enum import Enum
 
 from Button import Button
 from Vaisseau import AnimationState
+from Ennemie import Ennemie
 
 from utils.Font import get_font
 
@@ -11,7 +12,40 @@ from Command import commands
 import pygame
 import cv2
 
+import random
+
 import pygame_textinput
+
+
+class GameLevel(Enum):
+    """ Enumération des niveaux de jeu """
+
+    def __init__(self, wave_number, spawn_rate, asset_path_enemies):
+        super().__init__()
+        self.current_wave = 0
+        self.wave_number = wave_number
+        self.spawn_rate = spawn_rate
+        self.asset_path_enemies = asset_path_enemies
+
+    def spawn_enemies(self, game):
+        self.current_wave += 1
+
+        if self.is_finished():
+            return
+
+        spawn_number = self.spawn_rate * self.current_wave
+        for _ in range(spawn_number):
+            game.ennemies_group.add(Ennemie(game, self.asset_path_enemies, 3 * 0.4, (random.randint(0, game.SCREEN_WIDTH), -random.randint(120, 280))))
+
+    def is_finished(self):
+        return self.current_wave > self.wave_number
+
+    MathieuStage = (1, 2, "assets/vaisseau_ennemi.png")
+    RomainStage = (1, 2, "assets/vaisseau_test.png")
+    JulesStage = (5, 3, "assets/vaisseau_ennemi.png")
+    MaximilienStage = (5, 4, "assets/vaisseau_ennemi.png")
+
+levels = [GameLevel.MathieuStage, GameLevel.RomainStage, GameLevel.JulesStage, GameLevel.MaximilienStage]
 
 class State(ABC):
     @abstractmethod
@@ -102,14 +136,34 @@ class InGameMainState(WindowState):
         """ retourne le state actuel """
         return self.in_game_state[-1]
 
-# InGameState
-
-class GameOverState(InGameState):
+class GameOverState(WindowState):
     def init(self, game):
-        pass
+        self.menu_text = get_font(100).render("GAME OVER", True, (255, 255, 255))
+        self.menu_text_rect = self.menu_text.get_rect(center=(game.SCREEN_WIDTH / 2, game.SCREEN_HEIGHT / 2 - 200))
 
-    def step(self, game, dt):
-        pass
+        self.replay_button = Button(None, (game.SCREEN_WIDTH / 2, game.SCREEN_HEIGHT / 2), "MAIN MENU", get_font(75), (255, 255, 255), (255, 0, 0))
+
+        self.buttons = [self.replay_button]
+    
+    def step(self, game, _):
+        menu_mouse_position = pygame.mouse.get_pos()
+        
+        game.screen.blit(self.menu_text, self.menu_text_rect)
+
+        for button in self.buttons:
+            button.change_color(menu_mouse_position)
+            button.update(game.screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game.running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.replay_button.check_for_input(menu_mouse_position):
+                    game.pop_main_state() # retourne au jeu
+                    game.pop_main_state() # retourne au menu principal
+
+# InGameState
 
 class IntroState(InGameState):
     def init(self, game):
@@ -138,7 +192,12 @@ class IntroState(InGameState):
 class PlayingState(InGameState):
 
     def init(self, game):
-        pass
+        self.level_id = 0
+        self.level_state = levels[self.level_id]
+        self.level_state.current_wave = 0
+
+        # on fais spawn les premiers ennemis
+        self.level_state.spawn_enemies(game)
 
     def step(self, game, dt):
         game.main_player.speed = 0.1 * game.SCREEN_WIDTH
@@ -147,6 +206,9 @@ class PlayingState(InGameState):
             game.draw_groups()
             self.superposed_state.step(game, dt)
             return
+        
+        if not game.main_player.alive():
+            game.add_main_state(GameOverState())
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -158,13 +220,37 @@ class PlayingState(InGameState):
             if event.type == pygame.KEYDOWN and event.key == game.actions['chat']: # si on appuie sur la touche chat, on met le jeu en pause
                 self.add_superposed_state(ChatState(self), game)
 
-            if game.main_player.current_animation_state == AnimationState.Idle: # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
+            if game.main_player.current_animation_state == AnimationState.Idle and game.main_player.alive(): # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
 
                 if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
                     game.main_player.dx = 0.0
 
                 if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
                     game.main_player.shoot()
+
+        # on update les groupes en verifiant si les ennemis sont hit
+        hits = pygame.sprite.groupcollide(game.bullet_group_player, game.ennemies_group, True, False)
+        for bullet, ennemy in hits.items():
+            ennemy[0].take_damage(bullet.damage)
+
+        # on update les groupes en verifiant si le joueur est hit
+        hits = pygame.sprite.groupcollide(game.bullet_group_ennemy, game.vaisseaux_group, True, False)
+        for bullet, player in hits.items():
+            player[0].take_damage(bullet.damage)
+
+        # on verifie si il y a encore des ennemis en vie
+        if len(game.ennemies_group) == 0:
+            self.level_state.spawn_enemies(game)
+
+        if self.level_state.is_finished():
+            self.level_id += 1
+            if self.level_id == len(levels):
+                # on a fini le jeu
+                pass # FIXME tant que on laisse le pass le jeu va crasher a la fin
+            else:
+                self.level_state = levels[self.level_id]
+                self.level_state.current_wave = 0
+                self.level_state.spawn_enemies(game)
 
         game.update_groups(dt)
             
@@ -280,11 +366,3 @@ class ChatState(SuperPosedState):
                 self.parent_ingame_state.paused = False
                 self.parent_ingame_state.superposed_state = None
                 game.main_player.dx = 0.0
-
-
-class GameLevel(Enum):
-    """ Enumération des niveaux de jeu """
-    MathieuStage = 0
-    RomainStage = 1
-    JulesStage = 2
-    MaximilienStage = 3

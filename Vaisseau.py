@@ -83,12 +83,12 @@ class Vaisseau(pygame.sprite.Sprite):
 
             self._finish_animation()
 
-
     def update(self, dt):
         self.animation[self.current_animation_state](dt)
 
     def draw_health_bar(self):
         self.rect_life.center = (self.pos.x, self.pos.y + 55)
+        self.surface_life.fill((255, 0, 0))
         self.surface_life.fill((0, 255, 0), (0, 0, self.life, self.life_bar_height))
         self.game.screen.blit(self.surface_life, self.rect_life)
 
@@ -125,9 +125,12 @@ class Vaisseau(pygame.sprite.Sprite):
 
     def shoot(self):
         """ tire un projectile """
-        print("piouuu")
-        #self.current_animation_state = AnimationState.ToTop
-        self.game.bullet_group.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180))
-        self.game.bullet_group.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 90 + 45))
-        self.game.bullet_group.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180 + 45))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 90 + 45))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180 + 45))
+
+    def take_damage(self, damage: int):
+        self.life -= damage
+        if self.life <= 0:
+            self.kill()
 

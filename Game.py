@@ -57,14 +57,17 @@ class Game:
 
     def init(self):
         """ création des groupes et des sprites """
-        self.vaisseaux_group = pygame.sprite.Group()
+        self.vaisseaux_group = pygame.sprite.GroupSingle()
 
         self.main_player = Vaisseau(self, "assets/vaisseau_test.png", 0.4 * self.SCREEN_WIDTH, (self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 100))
         self.vaisseaux_group.add(self.main_player)
 
-        self.bullet_group = pygame.sprite.Group()
+        self.bullet_group_player = pygame.sprite.Group()
+        self.bullet_group_ennemy = pygame.sprite.Group()
 
-        self.groups = [self.bullet_group, self.vaisseaux_group]
+        self.ennemies_group = pygame.sprite.Group()
+
+        self.groups = [self.bullet_group_player, self.bullet_group_ennemy, self.vaisseaux_group, self.ennemies_group]
 
     def reset(self):
         """ remise à zéro des sprites et des groupes """
@@ -80,6 +83,7 @@ class Game:
 
     def step(self, dt: float):
         """ mise à jour des sprites """
+        # on convertit le temps en secondes
         dt /= 1000.0
 
         self.screen.fill((0, 0, 0))
