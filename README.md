@@ -15,3 +15,7 @@ A faire en priorité:
 - ajouter les competences
 - faire le texte du debut de la cinematique
 - les bruitages si j'ai le temps
+
+Pour les sons:
+
+- https://www.epidemicsound.com/fr/sound-effects/games/
