@@ -4,6 +4,7 @@ from enum import Enum
 from Button import Button
 from Vaisseau import AnimationState
 from Ennemie import Ennemie
+from Boss import Boss
 
 from utils.Font import get_font
 
@@ -20,12 +21,14 @@ import pygame_textinput
 class GameLevel(Enum):
     """ Enumération des niveaux de jeu """
 
-    def __init__(self, wave_number, spawn_rate, asset_path_enemies):
+    def __init__(self, wave_number, spawn_rate, asset_path_enemies, boss_entity=None):
         super().__init__()
         self.current_wave = 0
         self.wave_number = wave_number
         self.spawn_rate = spawn_rate
         self.asset_path_enemies = asset_path_enemies
+        self.boss_entity = boss_entity
+        self.boss_defeated = False
 
     def spawn_enemies(self, game):
         self.current_wave += 1
@@ -39,8 +42,12 @@ class GameLevel(Enum):
 
     def is_finished(self):
         return self.current_wave > self.wave_number
+    
+    def reset(self):
+        self.current_wave = 0
+        self.boss_defeated = False
 
-    MathieuStage = (1, 2, "assets/vaisseau_ennemi.png")
+    MathieuStage = (1, 2, "assets/vaisseau_ennemi.png", {"path_image": "", "speed": 10, "name": "Mathieu"})
     RomainStage = (1, 2, "assets/vaisseau_test.png")
     JulesStage = (5, 3, "assets/vaisseau_ennemi.png")
     MaximilienStage = (5, 4, "assets/vaisseau_ennemi.png")
@@ -49,7 +56,7 @@ levels = [GameLevel.MathieuStage, GameLevel.RomainStage, GameLevel.JulesStage, G
 
 class State(ABC):
     @abstractmethod
-    def init(self, game):
+    def init(self, game, **kwargs):
         """ création des groupes et des sprites de ce state ou des boutons pour les GUI """
         pass
 
@@ -123,10 +130,10 @@ class InGameMainState(WindowState):
         """ mise à jour du state in-game actuel """
         self.get_current_ingame_state().step(game, dt)
 
-    def add_ingame_state(self, state: InGameState, game):
+    def add_ingame_state(self, state: InGameState, game, **kwargs):
         """ ajoute un state à la pile """
         self.in_game_state.append(state)
-        state.init(game)
+        state.init(game, **kwargs)
 
     def pop_ingame_state(self):
         """ retourne au state précédent """
@@ -196,11 +203,15 @@ class PlayingState(InGameState):
         self.level_state = levels[self.level_id]
         self.level_state.current_wave = 0
 
+        # on evite que le boss soit deja mort lorsqu'on recommence le jeu
+        for level in levels:
+            level.reset()
+
         # on fais spawn les premiers ennemis
         self.level_state.spawn_enemies(game)
 
     def step(self, game, dt):
-        game.main_player.speed = 0.1 * game.SCREEN_WIDTH
+        game.main_player.speed = 0.1 * game.SCREEN_WIDTH # TODO je sais pas ce que sa fout la
 
         if self.paused:
             game.draw_groups()
@@ -243,25 +254,76 @@ class PlayingState(InGameState):
             self.level_state.spawn_enemies(game)
 
         if self.level_state.is_finished():
-            self.level_id += 1
-            if self.level_id == len(levels):
-                # on a fini le jeu
-                pass # FIXME tant que on laisse le pass le jeu va crasher a la fin
+            if not self.level_state.boss_defeated:
+                self.parent_state.add_ingame_state(BossState(self.parent_state), game, level_state=self.level_state)
             else:
-                self.level_state = levels[self.level_id]
-                self.level_state.current_wave = 0
-                self.level_state.spawn_enemies(game)
+                self.level_id += 1
+                if self.level_id == len(levels):
+                    # on a fini le jeu
+                    pass # bug la
+                else: # FIXME regarde sa
+                    self.level_state = levels[self.level_id]
+                    self.level_state.current_wave = 0
+                    self.level_state.spawn_enemies(game)
 
         game.update_groups(dt)
             
         game.draw_groups()
 
 class BossState(InGameState):
-    def init(self, game):
-        pass
+    def init(self, game, **kwargs):
+        self.level_state = kwargs['level_state']
+
+        # on fais spawn le boss
+        game.boss_group.add(Boss(game, **self.level_state.boss_entity, init_pos=(game.SCREEN_WIDTH/2, 240)))
 
     def step(self, game, dt):
-        pass
+        game.main_player.speed = 0.1 * game.SCREEN_WIDTH # TODO je sais pas ce que sa fout la
+
+        if self.paused:
+            game.draw_groups()
+            self.superposed_state.step(game, dt)
+            return
+        
+        if not game.main_player.alive():
+            game.add_main_state(GameOverState())
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game.running = False
+
+            if event.type == pygame.KEYDOWN and event.key == game.actions['pause']: # si on appuie sur la touche pause, on met le jeu en pause
+                self.add_superposed_state(PauseState(self), game) # on ajoute un état superposé au jeu et on met le jeu en pause via la fonction init
+            
+            if event.type == pygame.KEYDOWN and event.key == game.actions['chat']: # si on appuie sur la touche chat, on met le jeu en pause
+                self.add_superposed_state(ChatState(self), game)
+
+            if game.main_player.current_animation_state == AnimationState.Idle and game.main_player.alive(): # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
+
+                if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
+                    game.main_player.dx = 0.0
+
+                if event.type == pygame.KEYDOWN and event.key == game.actions['shoot']:
+                    game.main_player.shoot()
+
+        # on update les groupes en verifiant si les boss sont hit
+        hits = pygame.sprite.groupcollide(game.bullet_group_player, game.boss_group, True, False)
+        for bullet, ennemy in hits.items():
+            ennemy[0].take_damage(bullet.damage)
+
+        # on update les groupes en verifiant si le joueur est hit
+        hits = pygame.sprite.groupcollide(game.bullet_group_ennemy, game.vaisseaux_group, True, False)
+        for bullet, player in hits.items():
+            player[0].take_damage(bullet.damage)
+
+        # verifier si le boss est mort et pop l'état
+        if len(game.boss_group) == 0:
+            self.level_state.boss_defeated = True
+            self.parent_state.pop_ingame_state()
+
+        game.update_groups(dt)
+            
+        game.draw_groups()
 
 class WinState(InGameState):
     def init(self, game):

@@ -12,6 +12,12 @@ class Vec2d():
         y = self.y + o.y
 
         return Vec2d((x, y))
+    
+    def __sub__(self, o):
+        x = self.x - o.x
+        y = self.y - o.y
+
+        return Vec2d((x, y))
 
     def __eq__(self, o):
         return self.x == o.x and self.y == o.y
@@ -29,3 +35,9 @@ class Vec2d():
 
     def to_tuple(self):
         return (self.x, self.y)
+    
+    def dot(self, o):
+        return self.x * o.x + self.y * o.y
+    
+    def product(self, o):
+        return self.x * o.y - self.y * o.x

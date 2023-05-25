@@ -67,7 +67,9 @@ class Game:
 
         self.ennemies_group = pygame.sprite.Group()
 
-        self.groups = [self.bullet_group_player, self.bullet_group_ennemy, self.vaisseaux_group, self.ennemies_group]
+        self.boss_group = pygame.sprite.Group()
+
+        self.groups = [self.bullet_group_player, self.bullet_group_ennemy, self.vaisseaux_group, self.ennemies_group, self.boss_group]
 
     def reset(self):
         """ remise à zéro des sprites et des groupes """

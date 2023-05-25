@@ -31,9 +31,10 @@ class Ennemie(pygame.sprite.Sprite):
         self.velocity = Vec2d((0, self.speed))
 
         self.image = pygame.image.load(path_image)
-        self.rect_height = 100
-        self.rect_width = 100
+        self.rect_height = 85
+        self.rect_width = 85
         self.image = pygame.transform.scale(self.image, (self.rect_width, self.rect_height))
+        self.image = pygame.transform.rotate(self.image, 180)
 
         self.rect = self.image.get_rect()
         self.rect.center = (self.pos.x, self.pos.y)
@@ -50,7 +51,7 @@ class Ennemie(pygame.sprite.Sprite):
     def idle_movement(self, dt):
         self.pos.y += self.velocity.y
 
-        if self.pos.y + self.rect_width / 2 >= self.game.SCREEN_HEIGHT: # si on touche le bas de l'écran c'est game over
+        if self.pos.y + self.rect_width / 2 >= self.game.SCREEN_HEIGHT: # TODO si on touche le bas de l'écran c'est game over
             self.velocity.y = 0.0
 
         self.rect.center = (self.pos.x, self.pos.y)

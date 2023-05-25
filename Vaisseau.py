@@ -1,5 +1,7 @@
 import pygame
 
+import math
+
 from utils.Vec2d import Vec2d
 from utils.animation import animate_position_2d, ease_out_back, easeInOutExpo
 from Bullet import Bullet
@@ -110,6 +112,10 @@ class Vaisseau(pygame.sprite.Sprite):
         if self.pos.x + self.rect_width / 2 >= self.game.SCREEN_WIDTH:
             self.pos.x = self.game.SCREEN_WIDTH - self.rect_width / 2
             self.velocity.y = 0.0
+
+        # donner un effet de vague au vaisseau lorsqu'il stagne
+        self.animation_time += dt * 10
+        self.pos.y = math.sin(self.animation_time) * 2 + self.game.SCREEN_HEIGHT - 100
 
         self.rect.center = (self.pos.x, self.pos.y)
         self.draw_health_bar()
