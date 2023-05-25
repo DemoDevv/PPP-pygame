@@ -88,8 +88,6 @@ class Vaisseau(pygame.sprite.Sprite):
             self._finish_animation()
 
     def update(self, dt):
-        if self.is_invicible:
-            self.image.set_alpha(100)
         self.animation[self.current_animation_state](dt)
 
     def draw_health_bar(self):
@@ -147,4 +145,8 @@ class Vaisseau(pygame.sprite.Sprite):
 
     def invicible(self):
         self.is_invicible = not self.is_invicible
+        if self.is_invicible:
+            self.image.set_alpha(100)
+        else:
+            self.image.set_alpha(255)
 

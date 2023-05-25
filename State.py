@@ -96,6 +96,10 @@ class SuperPosedState(State, ABC):
 
 class MainMenuState(WindowState):
     def init(self, game):
+        pygame.mixer.music.load("assets/main_sound.mp3")
+        pygame.mixer.music.set_volume(0.1)
+        pygame.mixer.music.play(-1)
+
         self.menu_text = get_font(100).render("MAIN MENU", True, (255, 255, 255))
         self.menu_text_rect = self.menu_text.get_rect(center=(game.SCREEN_WIDTH / 2, game.SCREEN_HEIGHT / 2 - 200))
 
@@ -119,6 +123,10 @@ class MainMenuState(WindowState):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if self.play_button.check_for_input(menu_mouse_position):
                     game.add_main_state(InGameMainState())
+                    pygame.mixer.music.stop()
+                    transition_sound = pygame.mixer.Sound("assets/play.mp3")
+                    transition_sound.set_volume(0.3)
+                    transition_sound.play()
 
 
 class InGameMainState(WindowState):
@@ -169,6 +177,7 @@ class GameOverState(WindowState):
                 if self.replay_button.check_for_input(menu_mouse_position):
                     game.pop_main_state() # retourne au jeu
                     game.pop_main_state() # retourne au menu principal
+                    pygame.mixer.music.play(-1)
 
 # InGameState
 
@@ -382,6 +391,7 @@ class PauseState(SuperPosedState):
 
                 elif self.quit_button.check_for_input(menu_mouse_position):
                     game.pop_main_state()
+                    pygame.mixer.music.play(-1)
 
 
 class ChatState(SuperPosedState):
