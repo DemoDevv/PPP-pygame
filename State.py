@@ -47,10 +47,10 @@ class GameLevel(Enum):
         self.current_wave = 0
         self.boss_defeated = False
 
-    MathieuStage = (1, 2, "assets/vaisseau_ennemi.png", {"path_image": "", "speed": 10, "name": "Mathieu"})
-    RomainStage = (1, 2, "assets/vaisseau_test.png")
-    JulesStage = (5, 3, "assets/vaisseau_ennemi.png")
-    MaximilienStage = (5, 4, "assets/vaisseau_ennemi.png")
+    MathieuStage = (1, 2, "assets/vaisseau_ennemi.png", {"path_image": "", "name": "Mathieu"})
+    RomainStage = (1, 2, "assets/vaisseau_test.png", {"path_image": "", "name": "Romain"})
+    JulesStage = (5, 3, "assets/vaisseau_ennemi.png", {"path_image": "", "name": "Jules"})
+    MaximilienStage = (5, 4, "assets/vaisseau_ennemi.png", {"path_image": "", "name": "Maximilien"})
 
 levels = [GameLevel.MathieuStage, GameLevel.RomainStage, GameLevel.JulesStage, GameLevel.MaximilienStage]
 

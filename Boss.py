@@ -43,16 +43,17 @@ class BossAttack(Enum):
 
 class Boss(pygame.sprite.Sprite):
 
-    def __init__(self, game, path_image: str, speed: int, name: str, init_pos: tuple, init_life: int = 600):
+    def __init__(self, game, path_image: str, name: str, init_pos: tuple, init_life: int = 600):
         pygame.sprite.Sprite.__init__(self)
 
         self.game = game
 
         self.name = name
-        self.speed = speed
+        self.life_max = init_life
         self.life = init_life
 
         self.interval_attack = 5.0
+        self.enraged = False
 
         self.is_invincible = True
 
@@ -69,8 +70,6 @@ class Boss(pygame.sprite.Sprite):
         self.pos = Vec2d(init_pos)
         self.pos_start_animation = Vec2d((self.game.SCREEN_WIDTH / 2, -self.rect_height - 60))
         self.pos_during_animation = self.pos_start_animation
-
-        self.velocity = Vec2d((0, 0))
 
         # self.image = pygame.image.load(path_image)
         # self.image = pygame.transform.scale(self.image, (self.rect_width, self.rect_height))
@@ -93,7 +92,7 @@ class Boss(pygame.sprite.Sprite):
         self.name_text_rect = self.name_text.get_rect(center=(game.SCREEN_WIDTH / 2, 20))
 
         self.boss_state = BossState.Idle
-        self.boss_attack = BossAttack.Raining
+        self.boss_attack = BossAttack.Rocket
 
     def _finish_animation(self, animation_time, limit: float = 1.):
         if animation_time >= limit:
@@ -141,6 +140,9 @@ class Boss(pygame.sprite.Sprite):
             self._finish_animation(self.boss_attack.time, self.boss_attack.duration)
 
     def update(self, dt):
+        if self.life <= self.life_max // 2 and not self.enraged:
+            self.enraged = True
+            self.interval_attack = 2.5
         self.animation[self.current_animation_state](dt)
 
     def draw_health_bar(self):
@@ -157,7 +159,7 @@ class Boss(pygame.sprite.Sprite):
         self.interval_attack -= dt
 
         if self.interval_attack <= 0.0:
-            self.interval_attack = 5.0
+            self.interval_attack = 5.0 if not self.enraged else 2.5
             self.current_animation_state = AnimationState.Custom
             self.animation_time = 0.0
             self.boss_state = BossState.Attack
@@ -180,23 +182,18 @@ class Boss(pygame.sprite.Sprite):
         """ tire un projectile suivant le type d'attaque du boss """
         if self.boss_attack == BossAttack.Raining:
             pass
-        elif self.boss_attack == BossAttack.Rocket:
+        if self.boss_attack == BossAttack.Rocket:
             # tire un projectile en direction du joueur
             # on calcule la direction du projectile
-            magnitudeA = self.pos.magnitude()
-            magintudeB = self.game.main_player.pos.magnitude()
-
-            scalar_product = self.pos.dot(self.game.main_player.pos)
+            direction = self.game.main_player.pos - self.pos
+            # on normalise la direction
+            direction.normalize()
             # on calcule l'angle du projectile via la direction
-            angle = math.acos(scalar_product / (magnitudeA * magintudeB))
-            angle = math.degrees(angle)
+            angle = math.atan2(direction.y, direction.x)
+            angle = -(angle * (180 / math.pi) - 90)
 
-            product = self.pos.product(self.game.main_player.pos)
-            if product > 0:
-                angle = -angle
-                
             # on crée le projectile
-            self.game.bullet_group_ennemy.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 30, self.pos.to_tuple(), angle))
+            self.game.bullet_group_ennemy.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 30, self.pos.to_tuple(), angle, 2))
         elif self.boss_attack == BossAttack.Laser:
             pass
 

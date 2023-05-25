@@ -6,7 +6,7 @@ from utils.Vec2d import Vec2d
 
 class Bullet(pygame.sprite.Sprite):
 
-    def __init__(self, game, speed: int, damage: int, init_pos: tuple, angle: float):
+    def __init__(self, game, speed: int, damage: int, init_pos: tuple, angle: float, taille_ratio: int = 1):
         pygame.sprite.Sprite.__init__(self)
 
         self.game = game
@@ -18,8 +18,8 @@ class Bullet(pygame.sprite.Sprite):
 
         self.pos = Vec2d(init_pos)
 
-        self.rect_height = 10
-        self.rect_width = 3
+        self.rect_height = 10 * taille_ratio
+        self.rect_width = 3 * taille_ratio
         self.image = pygame.Surface((self.rect_width, self.rect_height), pygame.SRCALPHA)
         self.image.fill((255, 0, 0))
 
