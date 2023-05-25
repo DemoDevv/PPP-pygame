@@ -26,6 +26,8 @@ class Vaisseau(pygame.sprite.Sprite):
         self.speed = speed
         self.life = init_life
 
+        self.is_invicible = False
+
         self.life_bar_height = 6
         self.surface_life = pygame.Surface((self.life, self.life_bar_height))
         self.rect_life = self.surface_life.get_rect()
@@ -86,6 +88,8 @@ class Vaisseau(pygame.sprite.Sprite):
             self._finish_animation()
 
     def update(self, dt):
+        if self.is_invicible:
+            self.image.set_alpha(100)
         self.animation[self.current_animation_state](dt)
 
     def draw_health_bar(self):
@@ -136,7 +140,11 @@ class Vaisseau(pygame.sprite.Sprite):
         self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180 + 45))
 
     def take_damage(self, damage: int):
-        self.life -= damage
-        if self.life <= 0:
-            self.kill()
+        if not self.is_invicible:
+            self.life -= damage
+            if self.life <= 0:
+                self.kill()
+
+    def invicible(self):
+        self.is_invicible = not self.is_invicible
 

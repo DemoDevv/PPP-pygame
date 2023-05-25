@@ -16,4 +16,5 @@ class Command:
 commands = [
     Command("help", "Affiche la liste des commandes", lambda: print("\n".join([f"{command.name} : {command.description}" for command in commands]))),
     Command("quit", "Quitte le jeu", lambda: sys.exit()),
+    Command("invicible", "Rend le vaisseau invincible", lambda game: game.main_player.invicible()),
 ]

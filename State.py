@@ -423,7 +423,7 @@ class ChatState(SuperPosedState):
 
                 command_obj = command_objs[0]
 
-                command_obj.execute() # on execute la commande
+                command_obj.execute(game) # on execute la commande
 
                 self.parent_ingame_state.paused = False
                 self.parent_ingame_state.superposed_state = None
