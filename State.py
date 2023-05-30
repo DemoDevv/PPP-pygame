@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 from Button import Button
-from Vaisseau import AnimationState
 from Ennemie import Ennemie
 from Boss import Boss
 
@@ -21,7 +20,7 @@ import pygame_textinput
 class GameLevel(Enum):
     """ Enumération des niveaux de jeu """
 
-    def __init__(self, wave_number, spawn_rate, asset_path_enemies, boss_entity=None):
+    def __init__(self, wave_number, spawn_rate, asset_path_enemies, competences, boss_entity=None):
         super().__init__()
         self.current_wave = 0
         self.wave_number = wave_number
@@ -29,6 +28,16 @@ class GameLevel(Enum):
         self.asset_path_enemies = asset_path_enemies
         self.boss_entity = boss_entity
         self.boss_defeated = False
+        self.nb_competences = len(competences)
+        self.competences = competences
+
+        # completer les competences par des nones suivant le nombre de vagues * le nombre d'énemies par vagues
+        buffered_wave_number = self.wave_number
+        while buffered_wave_number > 0:
+            self.competences += [None] * (buffered_wave_number * self.spawn_rate)
+            buffered_wave_number -= 1
+        for i in range(self.nb_competences):
+            self.competences.pop(-1)
 
     def spawn_enemies(self, game):
         self.current_wave += 1
@@ -38,7 +47,9 @@ class GameLevel(Enum):
 
         spawn_number = self.spawn_rate * self.current_wave
         for _ in range(spawn_number):
-            game.ennemies_group.add(Ennemie(game, self.asset_path_enemies, 3 * 0.4, (random.randint(0, game.SCREEN_WIDTH), -random.randint(120, 280))))
+            competence = random.choice(self.competences)
+            game.ennemies_group.add(Ennemie(game, self.asset_path_enemies, 3 * 0.4, (random.randint(0, game.SCREEN_WIDTH), -random.randint(120, 380)), competence))
+            self.competences.remove(competence)
 
     def is_finished(self):
         return self.current_wave > self.wave_number
@@ -47,10 +58,10 @@ class GameLevel(Enum):
         self.current_wave = 0
         self.boss_defeated = False
 
-    MathieuStage = (1, 2, "assets/vaisseau_ennemi.png", {"path_image": "", "name": "Mathieu"})
-    RomainStage = (1, 2, "assets/vaisseau_test.png", {"path_image": "", "name": "Romain"})
-    JulesStage = (5, 3, "assets/vaisseau_ennemi.png", {"path_image": "", "name": "Jules"})
-    MaximilienStage = (5, 4, "assets/vaisseau_ennemi.png", {"path_image": "", "name": "Maximilien"})
+    MathieuStage = (2, 1, "assets/vaisseau_ennemi.png", ["a", "b", "c"], {"path_image": "assets/mathieu.jpeg", "path_image_laser": "assets/mathieu_laser.jpeg", "name": "Mathieu"})
+    RomainStage = (3, 1, "assets/vaisseau_test.png", ["a", "b", "c"], {"path_image": "assets/romain.jpeg", "path_image_laser": "assets/romain_laser.jpeg", "name": "Romain"})
+    JulesStage = (2, 2, "assets/vaisseau_ennemi.png", ["a", "b", "c"], {"path_image": "assets/jules.jpeg", "path_image_laser": "assets/jules_laser.jpeg", "name": "Jules"})
+    MaximilienStage = (5, 1, "assets/vaisseau_ennemi.png", ["a", "b", "c"], {"path_image": "assets/maximilien.jpeg", "path_image_laser": "assets/maximilien_laser.jpeg", "name": "Maximilien"})
 
 levels = [GameLevel.MathieuStage, GameLevel.RomainStage, GameLevel.JulesStage, GameLevel.MaximilienStage]
 
@@ -124,9 +135,9 @@ class MainMenuState(WindowState):
                 if self.play_button.check_for_input(menu_mouse_position):
                     game.add_main_state(InGameMainState())
                     pygame.mixer.music.stop()
-                    transition_sound = pygame.mixer.Sound("assets/play.mp3")
-                    transition_sound.set_volume(0.3)
-                    transition_sound.play()
+                    # transition_sound = pygame.mixer.Sound("assets/play.mp3")
+                    # transition_sound.set_volume(0.3)
+                    # transition_sound.play()
 
 
 class InGameMainState(WindowState):
@@ -240,7 +251,7 @@ class PlayingState(InGameState):
             if event.type == pygame.KEYDOWN and event.key == game.actions['chat']: # si on appuie sur la touche chat, on met le jeu en pause
                 self.add_superposed_state(ChatState(self), game)
 
-            if game.main_player.current_animation_state == AnimationState.Idle and game.main_player.alive(): # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
+            if game.main_player.current_animation_state.value == 0 and game.main_player.alive(): # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
 
                 if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
                     game.main_player.dx = 0.0
@@ -307,7 +318,7 @@ class BossState(InGameState):
             if event.type == pygame.KEYDOWN and event.key == game.actions['chat']: # si on appuie sur la touche chat, on met le jeu en pause
                 self.add_superposed_state(ChatState(self), game)
 
-            if game.main_player.current_animation_state == AnimationState.Idle and game.main_player.alive(): # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
+            if game.main_player.current_animation_state.value == 0 and game.main_player.alive(): # si le joueur est en idle, on peut le déplacer TODO: modifier pour que animation state provienne du vaisseau
 
                 if event.type == pygame.KEYUP and event.key in [game.actions['left'], game.actions['right']]:
                     game.main_player.dx = 0.0
@@ -435,6 +446,35 @@ class ChatState(SuperPosedState):
 
                 command_obj.execute(game) # on execute la commande
 
+                self.parent_ingame_state.paused = False
+                self.parent_ingame_state.superposed_state = None
+                game.main_player.dx = 0.0
+
+
+class CompetenceState(SuperPosedState):
+
+    def init(self, game):
+        self.parent_ingame_state.paused = True
+
+        self.opacity_background = pygame.Surface((game.SCREEN_WIDTH, game.SCREEN_HEIGHT), pygame.SRCALPHA)
+
+        name = game.main_player.competences[-1].name
+        self.text_competence = get_font(60).render(name, True, (255, 255, 255))
+        self.text_competence_rect = self.text_competence.get_rect(center=(game.SCREEN_WIDTH / 2, game.SCREEN_HEIGHT / 2))
+
+    def step(self, game, dt):
+        events = pygame.event.get()
+
+        self.opacity_background.fill((0, 0, 0, 155))
+        game.screen.blit(self.opacity_background, (0, 0))
+        
+        game.screen.blit(self.text_competence, self.text_competence_rect)
+
+        for event in events:
+            if event.type == pygame.QUIT:
+                game.running = False
+
+            if event.type == pygame.KEYDOWN and event.key == game.actions['pause']: # si on appuie sur la touche pause, on met le jeu en play
                 self.parent_ingame_state.paused = False
                 self.parent_ingame_state.superposed_state = None
                 game.main_player.dx = 0.0

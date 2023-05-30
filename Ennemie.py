@@ -2,13 +2,14 @@ import pygame
 
 from utils.Vec2d import Vec2d
 from Bullet import Bullet
+from Competence import Competence
 
 import random
 
 
 class Ennemie(pygame.sprite.Sprite):
 
-    def __init__(self, game, path_image: str, speed: int, init_pos: tuple, init_life: int = 100):
+    def __init__(self, game, path_image: str, speed: int, init_pos: tuple, competence, init_life: int = 100):
         pygame.sprite.Sprite.__init__(self)
 
         self.game = game
@@ -38,6 +39,8 @@ class Ennemie(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.center = (self.pos.x, self.pos.y)
+        
+        self.competence = competence
 
     def update(self, dt):
         self.idle_movement(dt)
@@ -69,5 +72,7 @@ class Ennemie(pygame.sprite.Sprite):
     def take_damage(self, damage: int):
         self.life -= damage
         if self.life <= 0:
+            if self.competence is not None:
+                self.game.competence_group.add(Competence(self.game, self.competence, self.pos.to_tuple()))
             self.kill()
 

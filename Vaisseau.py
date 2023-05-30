@@ -6,6 +6,8 @@ from utils.Vec2d import Vec2d
 from utils.animation import animate_position_2d, ease_out_back, easeInOutExpo
 from Bullet import Bullet
 
+from State import CompetenceState
+
 from enum import Enum
 
 
@@ -50,6 +52,10 @@ class Vaisseau(pygame.sprite.Sprite):
         self.rect.center = (self.pos_during_animation.x, self.pos_during_animation.y)
 
         self.dx = 0.0
+
+        self.competences = list()
+
+        self.degats = 10
 
         self.current_animation_state = AnimationState.FromBack
         self.animation_time = 0.0
@@ -133,9 +139,9 @@ class Vaisseau(pygame.sprite.Sprite):
 
     def shoot(self):
         """ tire un projectile """
-        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180))
-        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 90 + 45))
-        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 10, (self.pos.to_tuple()[0], self.rect.y), 180 + 45))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 180))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 90 + 45))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 180 + 45))
 
     def take_damage(self, damage: int):
         if not self.is_invicible:
@@ -149,4 +155,12 @@ class Vaisseau(pygame.sprite.Sprite):
             self.image.set_alpha(100)
         else:
             self.image.set_alpha(255)
+    
+    def damage(self, damage: int):
+        self.degats = damage
+
+    def add_competence(self, competence):
+        self.competences.append(competence)
+        ingame_state = self.game.get_current_main_state().get_current_ingame_state()
+        ingame_state.add_superposed_state(CompetenceState(ingame_state), self.game)
 
