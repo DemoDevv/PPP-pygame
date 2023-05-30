@@ -17,5 +17,5 @@ commands = [
     Command("help", "Affiche la liste des commandes", lambda: print("\n".join([f"{command.name} : {command.description}" for command in commands]))),
     Command("quit", "Quitte le jeu", lambda: sys.exit()),
     Command("invicible", "Rend le vaisseau invincible", lambda game: game.main_player.invicible()),
-    Command("damage", "augmente les dégats du vaisseau", lambda game, damage: game.main_player.damage(damage)),
+    Command("damage", "augmente les dégats du vaisseau", lambda game, damage: game.main_player.damage(int(damage))),
 ]

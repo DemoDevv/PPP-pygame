@@ -78,9 +78,7 @@ class Boss(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (self.rect_width, self.rect_height))
 
         self.path_image_laser = path_image_laser
-
-        # self.image = pygame.Surface((self.rect_width, self.rect_height), pygame.SRCALPHA) # TODO faut remplacer par l'image
-        # self.image.fill((255, 255, 255))
+        self.is_laser = False
 
         self.rect = self.image.get_rect()
         self.rect.center = (self.pos_during_animation.x, self.pos_during_animation.y)
@@ -105,11 +103,6 @@ class Boss(pygame.sprite.Sprite):
             self.animation_time = 0.0
             self.boss_attack.time = 0.0
             self.boss_state = BossState.Idle
-            self.image = pygame.image.load(self.path_image)
-            if not self.path_image.startswith("maximilien"):
-                self.image = pygame.transform.rotate(self.image, -90)
-            self.image = pygame.transform.scale(self.image, (self.rect_width, self.rect_height))
-
 
     def _perform_animation(self, dt, animation_type):
 
@@ -138,7 +131,15 @@ class Boss(pygame.sprite.Sprite):
                 self.boss_attack.shoot_interval = self.boss_attack.shoot_interval_base
                 self.shoot()
             elif self.boss_attack == BossAttack.Laser and anchor_index == 1:
+                self.is_laser = True
                 self.shoot()
+
+            if self.is_laser and anchor_index == 2:
+                self.image = pygame.image.load(self.path_image)
+                if not self.path_image.startswith("maximilien"):
+                    self.image = pygame.transform.rotate(self.image, -90)
+                self.image = pygame.transform.scale(self.image, (self.rect_width, self.rect_height))
+                self.is_laser = False
 
             if self.boss_attack.movement_functions != [] and anchor_index < len(self.boss_attack.anchors) - 1:
                 if anchor_index != self.boss_attack.anchor_index:
@@ -197,7 +198,7 @@ class Boss(pygame.sprite.Sprite):
             # on calcule la direction du projectile
             angle = random.uniform(0, 100) - 50
             # on crée le projectile
-            self.game.bullet_group_ennemy.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 30, self.pos.to_tuple(), angle, 2))
+            self.game.bullet_group_ennemy.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 30, self.pos.to_tuple(), angle, (255, 0, 0), 2))
         if self.boss_attack == BossAttack.Rocket:
             # tire un projectile en direction du joueur
             # on calcule la direction du projectile
@@ -209,7 +210,7 @@ class Boss(pygame.sprite.Sprite):
             angle = -(angle * (180 / math.pi) - 90)
 
             # on crée le projectile
-            self.game.bullet_group_ennemy.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 30, self.pos.to_tuple(), angle, 2))
+            self.game.bullet_group_ennemy.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, 30, self.pos.to_tuple(), angle, (255, 0, 0), 2))
         elif self.boss_attack == BossAttack.Laser:
             self.image = pygame.image.load(self.path_image_laser)
             if not self.path_image_laser.startswith("maximilien"):

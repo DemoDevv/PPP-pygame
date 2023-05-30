@@ -139,9 +139,9 @@ class Vaisseau(pygame.sprite.Sprite):
 
     def shoot(self):
         """ tire un projectile """
-        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 180))
-        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 90 + 45))
-        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 180 + 45))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 180, (0, 0, 255)))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 90 + 45, (0, 0, 255)))
+        self.game.bullet_group_player.add(Bullet(self.game, 0.4 * self.game.SCREEN_WIDTH, self.degats, (self.pos.to_tuple()[0], self.rect.y), 180 + 45, (0, 0, 255)))
 
     def take_damage(self, damage: int):
         if not self.is_invicible:

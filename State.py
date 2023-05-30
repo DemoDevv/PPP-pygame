@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+import inspect
 
 from Button import Button
 from Ennemie import Ennemie
 from Boss import Boss
 
 from utils.Font import get_font
+from copy import deepcopy
 
 from Command import commands
 
@@ -29,15 +31,8 @@ class GameLevel(Enum):
         self.boss_entity = boss_entity
         self.boss_defeated = False
         self.nb_competences = len(competences)
-        self.competences = competences
-
-        # completer les competences par des nones suivant le nombre de vagues * le nombre d'énemies par vagues
-        buffered_wave_number = self.wave_number
-        while buffered_wave_number > 0:
-            self.competences += [None] * (buffered_wave_number * self.spawn_rate)
-            buffered_wave_number -= 1
-        for i in range(self.nb_competences):
-            self.competences.pop(-1)
+        self.base_competences = competences
+        self._make_competences()
 
     def spawn_enemies(self, game):
         self.current_wave += 1
@@ -54,8 +49,20 @@ class GameLevel(Enum):
     def is_finished(self):
         return self.current_wave > self.wave_number
     
+    def _make_competences(self):
+        self.competences = deepcopy(self.base_competences)
+
+        # completer les competences par des nones suivant le nombre de vagues * le nombre d'énemies par vagues
+        buffered_wave_number = self.wave_number
+        while buffered_wave_number > 0:
+            self.competences += [None] * (buffered_wave_number * self.spawn_rate)
+            buffered_wave_number -= 1
+        for i in range(self.nb_competences):
+            self.competences.pop(-1)
+    
     def reset(self):
         self.current_wave = 0
+        self._make_competences()
         self.boss_defeated = False
 
     MathieuStage = (2, 1, "assets/vaisseau_ennemi.png", ["a", "b", "c"], {"path_image": "assets/mathieu.jpeg", "path_image_laser": "assets/mathieu_laser.jpeg", "name": "Mathieu"})
@@ -279,9 +286,8 @@ class PlayingState(InGameState):
             else:
                 self.level_id += 1
                 if self.level_id == len(levels):
-                    # on a fini le jeu
-                    pass # bug la
-                else: # FIXME regarde sa
+                    self.parent_state.add_ingame_state(WinState(self.parent_state), game)
+                else:
                     self.level_state = levels[self.level_id]
                     self.level_state.current_wave = 0
                     self.level_state.spawn_enemies(game)
@@ -345,19 +351,33 @@ class BossState(InGameState):
             
         game.draw_groups()
 
+
 class WinState(InGameState):
     def init(self, game):
-        pass
+        self.win_text = get_font(100).render("WIN", True, (255, 255, 255))
+        self.win_text_rect = self.win_text.get_rect(center=(game.SCREEN_WIDTH / 2, game.SCREEN_HEIGHT / 2 - 200))
+
+        self.continue_button = Button(None, (game.SCREEN_WIDTH / 2, game.SCREEN_HEIGHT / 2), "CONTINUER", get_font(75), (255, 255, 255), (255, 0, 0))
+
+        self.buttons = [self.continue_button]
 
     def step(self, game, dt):
-        pass
+        menu_mouse_position = pygame.mouse.get_pos()
 
-class EndState(InGameState):
-    def init(self, game):
-        pass
+        game.screen.blit(self.win_text, self.win_text_rect)
 
-    def step(self, game, dt):
-        pass
+        for button in self.buttons:
+            button.change_color(menu_mouse_position)
+            button.update(game.screen)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game.running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.continue_button.check_for_input(menu_mouse_position):
+                    game.pop_main_state()
+
 
 class PauseState(SuperPosedState):
     def init(self, game):
@@ -435,7 +455,7 @@ class ChatState(SuperPosedState):
                     print("ce n'est pas une commande")
                     break # TODO: afficher un message d'erreur
                 
-                command_name = text_input_value[1:]
+                command_name = text_input_value.split(" ")[0][1:] # on recupere le nom de la commande
                 command_objs = list(filter(lambda command: command.name == command_name, commands))
 
                 if len(command_objs) == 0:
@@ -444,7 +464,19 @@ class ChatState(SuperPosedState):
 
                 command_obj = command_objs[0]
 
-                command_obj.execute(game) # on execute la commande
+                # recuperer le nombre d'arguments que la commande selectionnee prend
+                command_args_count = len(inspect.signature(command_obj.function).parameters) - 1 # -1 car le premier argument est le game
+
+                # on parse la commande pour recuperer les arguments
+                command_args = text_input_value.split(" ")[1:]
+
+                if len(command_args) != command_args_count and command_args_count > -1:
+                    print("mauvais nombre d'arguments")
+                    break
+                elif command_args_count == -1:
+                    command_obj.execute()
+                else:
+                    command_obj.execute(game, *command_args) # on execute la commande
 
                 self.parent_ingame_state.paused = False
                 self.parent_ingame_state.superposed_state = None

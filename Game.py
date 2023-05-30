@@ -30,6 +30,9 @@ class Game:
         self.fps_base = 60
         self.fps = self.fps_base
 
+        self.background_image = pygame.image.load("assets/background.png")
+        self.background_image = pygame.transform.scale(self.background_image, (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+
         # on utilise le state comme une pile,
         # cela signifie que le state le plus récent est le dernier élément de la liste 
         # et pour revenir au state précédent,
@@ -90,7 +93,8 @@ class Game:
         # on convertit le temps en secondes
         dt /= 1000.0
 
-        self.screen.fill((0, 0, 0))
+        # on draw l'image qui fais office de fond
+        self.screen.blit(self.background_image, (0, 0))
 
         # on met à jour le state actuel
         self.get_current_main_state().step(self, dt)
