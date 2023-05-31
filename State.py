@@ -41,10 +41,11 @@ class GameLevel(Enum):
             return
 
         spawn_number = self.spawn_rate * self.current_wave
-        for _ in range(spawn_number):
-            competence = random.choice(self.competences)
-            game.ennemies_group.add(Ennemie(game, self.asset_path_enemies, 3 * 0.4, (random.randint(0, game.SCREEN_WIDTH), -random.randint(120, 380)), competence))
-            self.competences.remove(competence)
+        for i in range(spawn_number):
+            competence = self.competences.pop(0)
+            # je veux eviter que les ennemies spawn trop pres entre eux
+            offset = 200 + (random.randint(0, 100) * i * 0.5)
+            game.ennemies_group.add(Ennemie(game, self.asset_path_enemies, 3 * 0.4, (random.randint(0, game.SCREEN_WIDTH), -random.randint(120, 380) + offset), competence))
 
     def is_finished(self):
         return self.current_wave > self.wave_number
@@ -57,7 +58,7 @@ class GameLevel(Enum):
         while buffered_wave_number > 0:
             self.competences += [None] * (buffered_wave_number * self.spawn_rate)
             buffered_wave_number -= 1
-        for i in range(self.nb_competences):
+        for _ in range(self.nb_competences):
             self.competences.pop(-1)
     
     def reset(self):
@@ -65,10 +66,10 @@ class GameLevel(Enum):
         self._make_competences()
         self.boss_defeated = False
 
-    MathieuStage = (2, 1, "assets/vaisseau_ennemi.png", ["a", "b", "c"], {"path_image": "assets/mathieu.jpeg", "path_image_laser": "assets/mathieu_laser.jpeg", "name": "Mathieu"})
-    RomainStage = (3, 1, "assets/vaisseau_test.png", ["a", "b", "c"], {"path_image": "assets/romain.jpeg", "path_image_laser": "assets/romain_laser.jpeg", "name": "Romain"})
-    JulesStage = (2, 2, "assets/vaisseau_ennemi.png", ["a", "b", "c"], {"path_image": "assets/jules.jpeg", "path_image_laser": "assets/jules_laser.jpeg", "name": "Jules"})
-    MaximilienStage = (5, 1, "assets/vaisseau_ennemi.png", ["a", "b", "c"], {"path_image": "assets/maximilien.jpeg", "path_image_laser": "assets/maximilien_laser.jpeg", "name": "Maximilien"})
+    MathieuStage = (3, 1, "assets/vaisseau_ennemi.png", ["Amical", "Calme", "Compétitif", "Persévérant", "Curieux", "Logique"], {"path_image": "assets/mathieu.jpeg", "path_image_laser": "assets/mathieu_laser.jpeg", "name": "Mathieu"})
+    RomainStage = (4, 1, "assets/vaisseau_ennemi.png", ["A l'écoute", "Discret", "Réservé", "Inventivité", "Perspicacité", "Concentration", "Vision de l'espace", "Travail d'équipe", "Persévérance", "Entraide"], {"path_image": "assets/romain.jpeg", "path_image_laser": "assets/romain_laser.jpeg", "name": "Romain"})
+    JulesStage = (1, 4, "assets/vaisseau_ennemi.png", ["Persévérant", "Compétitif", "Esprit d'équipe",  "Amical"], {"path_image": "assets/jules.jpeg", "path_image_laser": "assets/jules_laser.jpeg", "name": "Jules"})
+    MaximilienStage = (5, 1, "assets/vaisseau_ennemi.png", ["Calme", "Curieux", "Patient", "Prudent"], {"path_image": "assets/maximilien.jpeg", "path_image_laser": "assets/maximilien_laser.jpeg", "name": "Maximilien"})
 
 levels = [GameLevel.MathieuStage, GameLevel.RomainStage, GameLevel.JulesStage, GameLevel.MaximilienStage]
 
@@ -345,6 +346,7 @@ class BossState(InGameState):
         # verifier si le boss est mort et pop l'état
         if len(game.boss_group) == 0:
             self.level_state.boss_defeated = True
+            game.main_player.change_vaisseau()
             self.parent_state.pop_ingame_state()
 
         game.update_groups(dt)

@@ -18,9 +18,16 @@ class AnimationState(Enum):
     ToTop = 3
 
 
+class Skin(Enum):
+    Mathieu = "assets/vaisseau_mathieu.png"
+    Romain = "assets/vaisseau_romain.png"
+    Jules = "assets/vaisseau_jules.png"
+    Maximilien = "assets/vaisseau_maximilien.png"
+
+
 class Vaisseau(pygame.sprite.Sprite):
 
-    def __init__(self, game, path_image: str, speed: int, init_pos: tuple, init_life: int = 100):
+    def __init__(self, game, speed: int, init_pos: tuple, init_life: int = 100):
         pygame.sprite.Sprite.__init__(self)
 
         self.game = game
@@ -43,7 +50,7 @@ class Vaisseau(pygame.sprite.Sprite):
 
         self.velocity = Vec2d((0, 0))
 
-        self.image = pygame.image.load(path_image)
+        self.image = pygame.image.load(list(Skin)[0].value)
         self.rect_height = 100
         self.rect_width = 100
         self.image = pygame.transform.scale(self.image, (self.rect_width, self.rect_height))
@@ -56,6 +63,8 @@ class Vaisseau(pygame.sprite.Sprite):
         self.competences = list()
 
         self.degats = 10
+
+        self.index_skin = 0
 
         self.current_animation_state = AnimationState.FromBack
         self.animation_time = 0.0
@@ -72,6 +81,20 @@ class Vaisseau(pygame.sprite.Sprite):
             self.dx = 0.0
             self.animation_time = 0.0
 
+    def _finish_leave_animation(self):
+        if self.animation_time >= 1.:
+            self.index_skin += 1
+            if self.index_skin >= len(Skin):
+                self.pos = self.pos_during_animation
+                self.current_animation_state = AnimationState.Idle
+            else:
+                self.image = pygame.image.load(list(Skin)[self.index_skin].value)
+                self.image = pygame.transform.scale(self.image, (self.rect_width, self.rect_height))
+                self.current_animation_state = AnimationState.FromBack
+                self.dx = 0.0
+                self.animation_time = 0.0
+
+
     def _perform_animation(self, dt, animation_type):
 
         if animation_type == AnimationState.FromBack:
@@ -83,7 +106,12 @@ class Vaisseau(pygame.sprite.Sprite):
             self._finish_animation()
 
         elif animation_type == AnimationState.ToBack:
-            pass # utiliser cette animation lors du changement de joueur
+            self.animation_time += dt
+
+            self.pos_during_animation = Vec2d(animate_position_2d(easeInOutExpo, self.pos.to_tuple(), self.pos_start_animation.to_tuple(), self.animation_time))
+            self.rect.center = self.pos_during_animation.to_tuple()
+
+            self._finish_animation()
 
         elif animation_type == AnimationState.ToTop:
             self.animation_time += dt
@@ -91,7 +119,7 @@ class Vaisseau(pygame.sprite.Sprite):
             self.pos_during_animation = Vec2d(animate_position_2d(easeInOutExpo, self.pos.to_tuple(), (self.pos.x, -150), self.animation_time))
             self.rect.center = self.pos_during_animation.to_tuple()
 
-            self._finish_animation()
+            self._finish_leave_animation()
 
     def update(self, dt):
         self.animation[self.current_animation_state](dt)
@@ -161,6 +189,16 @@ class Vaisseau(pygame.sprite.Sprite):
 
     def add_competence(self, competence):
         self.competences.append(competence)
+        self.degats *= 1.1 if self.degats < 100 else 1
+        self.life *= 1.5 if self.life < 100 else 1
         ingame_state = self.game.get_current_main_state().get_current_ingame_state()
         ingame_state.add_superposed_state(CompetenceState(ingame_state), self.game)
 
+    def reset(self):
+        self.life = 100
+        self.degats = 10
+        self.competences = list()
+
+    def change_vaisseau(self):
+        self.animation_time = 0.0
+        self.current_animation_state = AnimationState.ToTop

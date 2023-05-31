@@ -15,16 +15,16 @@ class Competence(pygame.sprite.Sprite):
 
         self.pos = Vec2d(init_pos)
 
-        self.rect_height = 7
-        self.rect_width = 7
-        self.image = pygame.Surface((self.rect_width, self.rect_height), pygame.SRCALPHA)
-        self.image.fill((255, 0, 0))
+        self.rect_height = 30
+        self.rect_width = 30
+        self.image = pygame.image.load("assets/exp_boost.png")
+        self.image = pygame.transform.scale(self.image, (self.rect_width, self.rect_height))
 
         self.rect = self.image.get_rect()
         self.rect.center = self.pos.to_tuple()
 
     def update(self, dt):
-        deplacement = Vec2d((0, 100 * dt))
+        deplacement = Vec2d((0, 80 * dt))
         self.pos.y += deplacement.y
         self.pos.x += deplacement.x
         self.rect.center = self.pos.to_tuple()

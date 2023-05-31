@@ -1,4 +1,3 @@
-import sys
 import pygame
 
 from Vaisseau import Vaisseau
@@ -62,7 +61,7 @@ class Game:
         """ création des groupes et des sprites """
         self.vaisseaux_group = pygame.sprite.GroupSingle()
 
-        self.main_player = Vaisseau(self, "assets/vaisseau_test.png", 0.4 * self.SCREEN_WIDTH, (self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 100))
+        self.main_player = Vaisseau(self, 0.4 * self.SCREEN_WIDTH, (self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 100))
         self.vaisseaux_group.add(self.main_player)
 
         self.bullet_group_player = pygame.sprite.Group()
